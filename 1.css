@@ -1,0 +1,48 @@
+body{
+    background-image: url('retina_wood.png');
+}
+
+#plate {
+    width: 350px;
+    height: 350px;
+    display: flex;
+    margin: 100px auto;
+    background-color: #333;
+    border-radius: 50%;
+    position: relative;
+}
+
+#inner-plate {
+    width: 92%;
+    height: 92%;
+    border-radius: 50%;
+    margin: auto;
+    overflow: hidden;
+    position: relative;
+}
+
+#button1,#button2,#button3,#button4 {
+    position: absolute;
+    width: 47%;
+    height: 47%;
+}
+
+#button1{
+    background-color: #cca707;
+}
+
+#button2{
+    background-color: #9f0f17;
+    right: 0;
+}
+
+#button3{
+    background-color: #00a74a;
+    bottom: 0;
+}
+
+#button4 {
+    background-color: #094a8f;
+    bottom: 0;
+    right: 0;
+}
