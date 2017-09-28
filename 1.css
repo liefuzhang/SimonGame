@@ -118,6 +118,6 @@ body{
     cursor: pointer;
 }
 
-.plate-button .unclickable{
+.plate-button.unclickable{
     pointer-events: none;
 }
