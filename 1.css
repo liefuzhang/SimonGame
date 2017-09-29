@@ -1,5 +1,6 @@
 body{
     background-image: url('res/retina_wood.png');
+    font-family: 'Oswald',Arial,sans;
 }
 
 .text {
@@ -64,16 +65,51 @@ body{
     background-color: #1c8cff;
 }
 
+#title {
+    font-family: 'Alfa Slab One', cursive;
+    color: #222;
+    font-size: 2.4em;
+}
+
+#title span {
+    font-size:14px;
+    position: relative;
+    bottom: 15px;
+}
+
+
 #mid-control{
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: space-around;
+    width: 90%;
+    align-items: flex-end;
+}
+
+.text {
+    font-size: 9px;
+}
+
+#mid-control .text{
+    margin-top: 5px;
 }
 
 #count-screen {
     background-color: #32050C;
     color: #DC0D29;
     border: 4px solid #222;
+    border-radius: 10px;
+    width: 40px;
+    height: 20px;
+    font-family: 'VT323', monospace;
+    font-weight: 500;
+    font-size: 18px;
+    display: flex;
+    justify-content: center;
+}
+
+#count-screen.turned-off {
+    color: 	rgba(220,13,41, 0.3);
 }
 
 #count, #start {
@@ -81,7 +117,7 @@ body{
     text-align: center;   
 }
 
-#start-button{
+#start-button, #strict-button{
     display: inline-block;
     cursor: pointer;
     position: relative;
@@ -92,9 +128,14 @@ body{
     border-radius: 50%;
     box-sizing: border-box;
     box-shadow: 0px 2px 3px #222;
+    margin-bottom: 5px;
 }
 
-#start-button:active{
+#strict-button{
+    background-color: yellow;
+}
+
+#start-button:active, #strict-button:active{
     box-shadow: 0 1px 1px #292929;
     top: 1px;
 }
@@ -111,13 +152,45 @@ body{
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-around;
+    justify-content: center;
 }
 
 .plate-button {
     cursor: pointer;
 }
 
-.plate-button.unclickable{
+.unclickable{
     pointer-events: none;
+}
+
+#switch {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+
+#switch .text{
+    margin: 0 5px;
+}
+
+#switch-container {
+    width: 30px;
+    height: 15px;
+    border-radius: 2px;
+    background-color: #222;
+    cursor: pointer;
+}
+
+#switch-button{
+    width: 13px;
+    height: 13px;
+    background-color: #3193DE;
+    display: inline-block;
+    border: 1px solid #333;
+    border-radius: 3px;
+    position: relative;
+}
+
+#switch-button.turned-on{
+    left:15px;
 }
