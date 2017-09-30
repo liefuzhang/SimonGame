@@ -5,15 +5,19 @@ $(document).ready(() => {
 });
 
 var game = {
-    isOn: false,
     series: [],
-    isStrict: false,
     currentCount: 0,
     expectedIndex: 0,
     timeoutHandler: 0,
+    playSeriesHandler: 0,
+    countFlickerHandler: 0
 };
 
-var gameInit = {};
+var gameControl = {
+    isOn: false,
+    isStrict: false,
+    gameInit: null
+}
 
 var audios = [new Audio('res/error.mp3'),
 new Audio('res/simonSound1.mp3'),
@@ -25,10 +29,23 @@ var audioHandlers = [];
 
 function setupClickHandler() {
     $('#start-button').click(() => {
-        if (!game.isOn) {
+        if (!gameControl.isOn) {
             return;
         }
         startGame();
+    });
+
+    $('#strict-button').click(() => {
+        if (!gameControl.isOn) {
+            return;
+        }
+        if (!gameControl.isStrict) {
+            gameControl.isStrict = true;
+            $("#strict-indicator").addClass("turned-on");
+        } else {
+            gameControl.isStrict = false;
+            $("#strict-indicator").removeClass("turned-on");
+        }
     });
 
     $('.plate-button').click(function () {
@@ -44,39 +61,49 @@ function setupClickHandler() {
         } else {
             $button.addClass("turned-on");
             turnGameOnOff(true);
+            gameControl.gameInit = Object.assign({}, game);
         }
     });
 }
 
 function turnGameOnOff(on) {
     if (on) {
-        game.isOn = true;
+        gameControl.isOn = true;
         $("#count-screen").removeClass("turned-off");
     } else {
-        game.isOn = false;
-        clearTimeout(game.timeoutHandler);
-        toggleButtons(false);
-        audioHandlers.forEach((handler) => {
-            if (handler){
-                clearTimeout(handler);
-            }
-        });
-        audios.forEach((audio)=> {
-            audio.pause();
-        });
-        $(".plate-button").removeClass("light");
-        $("#count-screen").text("--").addClass("turned-off");
+        gameControl.isOn = false;
+        gameControl.isStrict = false;
+        $("#strict-indicator").removeClass("turned-on");        
+        resetGame();
     }
 }
 
-function onButtonClick(id) {
-    if (id === game.series[game.expectedIndex]) {
-        clearTimeout(game.timeoutHandler);
+function resetGame() {
+    clearTimeout(game.timeoutHandler);
+    clearTimeout(game.playSeriesHandler);
+    clearTimeout(game.countFlickerHandler);
+    toggleButtons(false);
+    audioHandlers.forEach((handler) => {
+        if (handler) {
+            clearTimeout(handler);
+        }
+    });
+    audios.forEach((audio) => {
+        audio.pause();
+    });
+    $(".plate-button").removeClass("light");
+    $("#count-screen").text("--").addClass("turned-off");
+    game = Object.assign({}, gameControl.gameInit);
+}
 
-        $("#button" + id)[0].classList.add("light");
-        playAudio(id, 0.5, (args) => {
-            $("#button" + args.num)[0].classList.remove("light");
-        }, args = { num: id });
+function onButtonClick(id) {
+    clearTimeout(game.timeoutHandler);
+
+    $("#button" + id)[0].classList.add("light");
+    if (id === game.series[game.expectedIndex]) {
+        playAudio(id, 0.5, () => {
+            $("#button" + id)[0].classList.remove("light");
+        });
 
         if (game.expectedIndex === game.currentCount) {
             MoveForward();
@@ -84,25 +111,47 @@ function onButtonClick(id) {
             game.expectedIndex++;
             waitForInputSeries();
         }
+    } else {
+        timeoutOrFailedHandler(() => {
+            $("#button" + id)[0].classList.remove("light");
+        });
     }
 }
 
 function MoveForward() {
     game.currentCount++;
-    updateCountScreen();
+    toggleButtons(false);
     if (game.currentCount === 20) {
         // you win
-
+        $("#count-screen").text("**");
+        flickerCountScreen(16, 180);
+        var lastNum = game.series[19];
+        audioHandlers[lastNum] = setTimeout(() => {
+            $("#button" + lastNum).addClass("light");
+            playAudio(lastNum, 0.5, () => {
+                $("#button" + lastNum).removeClass("light");
+                playAudio(lastNum, 0.5, () => {
+                    $("#button" + lastNum).addClass("light");
+                    playAudio(lastNum, 0.5, () => {
+                        $("#button" + lastNum).removeClass("light");
+                        playAudio(lastNum, 0.5, () => {
+                            $("#button" + lastNum).addClass("light");
+                            playAudio(lastNum, 0.5, () => {
+                                $("#button" + lastNum).removeClass("light");
+                            })
+                        })
+                    })
+                })
+            })
+        }, 500);
     } else {
-        toggleButtons(false);
-        game.expectedIndex = 0;
         playCurrentSeries(0);
     }
 }
 
 function updateCountScreen() {
     var textCount = (game.currentCount + 1).toString();
-    if (game.currentCount < 10) {
+    if (game.currentCount + 1 < 10) {
         textCount = "0" + textCount;
     }
     $("#count-screen").text(textCount).removeClass("turned-off");
@@ -122,19 +171,45 @@ function waitForInputSeries() {
     }, 5000);
 }
 
-function timeoutOrFailedHandler() {
+function timeoutOrFailedHandler(callback) {
     toggleButtons(false);
-    playAudio(0, 0.8, playCurrentSeries(0));
+    playAudio(0, 0.8, () => {
+        if (callback) {
+            callback();
+        }
+    });
+    $("#count-screen").text("!!");
+    flickerCountScreen(6, 180, () => { 
+        if (gameControl.isStrict) {
+            generateSeries();
+            game.currentCount = 0;
+        }
+        playCurrentSeries(0);
+     });
+}
+
+function flickerCountScreen(times, interval, callback) {
+    if (times === 0) {
+        if (callback) {
+            callback();
+        }
+        return;
+    }
+    game.countFlickerHandler = setTimeout(() => {
+        $("#count-screen").toggleClass("turned-off");
+        flickerCountScreen(times - 1, interval, callback);
+    }, interval)
 }
 
 function startGame() {
-    game = Object.assign({}, gameInit);
-    updateCountScreen();
+    resetGame();
+    $("#count-screen").removeClass("turned-off");
+    flickerCountScreen(4, 180);
     generateSeries();
     playCurrentSeries(0);
 }
 
-function playAudio(num, sec, callback, callbackArgs) {
+function playAudio(num, sec, callback) {
     if (audioHandlers[num]) {
         clearTimeout(audioHandlers[num]);
     }
@@ -143,27 +218,28 @@ function playAudio(num, sec, callback, callbackArgs) {
     audioHandlers[num] = setTimeout(function () {
         audios[num].pause();
         if (callback) {
-            callback(callbackArgs);
+            callback();
         }
     }, sec * 1000);
 }
 
 function playCurrentSeries(index) {
     var num = game.series[index];
-    setTimeout(() => {
-        $("#button" + num)[0].classList.add("light");
-        playAudio(num, 1);
-
-        setTimeout(() => {
-            $("#button" + num)[0].classList.remove("light");
+    var delay = index === 0 ? 2000 : (19 - game.currentCount) * 30;
+    game.expectedIndex = 0;
+    game.playSeriesHandler = setTimeout(() => {
+        $("#button" + num).addClass("light");
+        updateCountScreen();
+        playAudio(num, 0.5, () => {
+            $("#button" + num).removeClass("light");
             if (index === game.currentCount) {
                 toggleButtons(true);
                 waitForInputSeries();
             } else {
                 playCurrentSeries(index + 1);
             }
-        }, 1000);
-    }, 1000);
+        });
+    }, delay);
 }
 
 function toggleButtons(enable) {
